@@ -1,0 +1,106 @@
+{
+  "id": "8f7e9d2a-4b3c-4d1e-9f2a-1c8b7e6d5f4a",
+  "executionDate": "2026-01-17T16:47:03-05:00",
+  "status": "Success",
+  "totalTests": 11,
+  "passedTests": 11,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "testDurationSeconds": 3.1,
+  "commitHash": "cc3ea9e",
+  "filesModified": [
+    "Program.cs",
+    "Services/DatabaseService.cs"
+  ],
+  "filesAdded": [
+    "Services/ISqlConnectionFactory.cs",
+    "Data/DailySummary.cs",
+    "Services/SummaryService.cs",
+    "Pages/Guardian.razor"
+  ],
+  "testResults": [
+    {
+      "testName": "OptimizeStoredProcedureAsync_ReturnsOptimizedString",
+      "className": "AIServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.12,
+      "errorMessage": null
+    },
+    {
+      "testName": "GenerateQueryAsync_ReturnsSelectString",
+      "className": "AIServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.08,
+      "errorMessage": null
+    },
+    {
+      "testName": "GetTablesAsync_ReturnsTables",
+      "className": "DatabaseServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.45,
+      "errorMessage": null
+    },
+    {
+      "testName": "GetIndexHealthAsync_ReturnsIndexes",
+      "className": "DatabaseServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.38,
+      "errorMessage": null
+    },
+    {
+      "testName": "GetStoredProceduresAsync_ReturnsProcedures",
+      "className": "DatabaseServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.41,
+      "errorMessage": null
+    },
+    {
+      "testName": "Test1",
+      "className": "UnitTest1",
+      "status": "Passed",
+      "durationSeconds": 0.02,
+      "errorMessage": null
+    },
+    {
+      "testName": "CurrentTheme_DefaultsToLight",
+      "className": "ThemeServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.15,
+      "errorMessage": null
+    },
+    {
+      "testName": "ToggleTheme_SwitchesFromLightToDark",
+      "className": "ThemeServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.18,
+      "errorMessage": null
+    },
+    {
+      "testName": "ToggleTheme_SwitchesFromDarkToLight",
+      "className": "ThemeServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.16,
+      "errorMessage": null
+    },
+    {
+      "testName": "OnThemeChanged_InvokesWhenThemeChanges",
+      "className": "ThemeServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.22,
+      "errorMessage": null
+    },
+    {
+      "testName": "OnThemeChanged_DoesNotInvokeWhenThemeUnchanged",
+      "className": "ThemeServiceTests",
+      "status": "Passed",
+      "durationSeconds": 0.19,
+      "errorMessage": null
+    }
+  ],
+  "notes": "Initial Code Guardian run. Successfully refactored DatabaseService for testability using ISqlConnectionFactory. Created comprehensive test suite with 100% pass rate. Added daily summary persistence system.",
+  "coverageByService": {
+    "AIService": 2,
+    "DatabaseService": 4,
+    "ThemeService": 5
+  }
+}
