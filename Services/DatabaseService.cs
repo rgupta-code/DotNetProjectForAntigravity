@@ -8,10 +8,12 @@ namespace DotNetProjectForAntigravity.Services;
 public class DatabaseService
 {
     private readonly IConfiguration _configuration;
+    private readonly ISqlConnectionFactory _connectionFactory;
 
-    public DatabaseService(IConfiguration configuration)
+    public DatabaseService(IConfiguration configuration, ISqlConnectionFactory connectionFactory)
     {
         _configuration = configuration;
+        _connectionFactory = connectionFactory;
     }
 
     private string GetConnectionString()
@@ -23,7 +25,7 @@ public class DatabaseService
     public async Task<List<TableInfo>> GetTablesAsync()
     {
         var connectionString = GetConnectionString();
-        using var connection = new SqlConnection(connectionString);
+        using var connection = _connectionFactory.CreateConnection(connectionString);
         
         var query = @"
             SELECT 
@@ -45,7 +47,7 @@ public class DatabaseService
     public async Task<List<IndexInfo>> GetIndexHealthAsync(string schemaName, string tableName)
     {
         var connectionString = GetConnectionString();
-        using var connection = new SqlConnection(connectionString);
+        using var connection = _connectionFactory.CreateConnection(connectionString);
         
         var query = @"
             SELECT 
@@ -76,7 +78,7 @@ public class DatabaseService
     public async Task<List<string>> GetStoredProceduresAsync()
     {
         var connectionString = GetConnectionString();
-        using var connection = new SqlConnection(connectionString);
+        using var connection = _connectionFactory.CreateConnection(connectionString);
         
         var query = @"
             SELECT 
@@ -92,7 +94,7 @@ public class DatabaseService
     public async Task<string> GetStoredProcedureDefinitionAsync(string procedureName)
     {
         var connectionString = GetConnectionString();
-        using var connection = new SqlConnection(connectionString);
+        using var connection = _connectionFactory.CreateConnection(connectionString);
         
         var query = @"
             SELECT OBJECT_DEFINITION(OBJECT_ID(@ProcedureName)) as Definition";
@@ -107,9 +109,9 @@ public class DatabaseService
         var results = new BenchmarkResult();
 
         // Benchmark original
-        using (var connection = new SqlConnection(connectionString))
+        using (var connection = _connectionFactory.CreateConnection(connectionString))
         {
-            await connection.OpenAsync();
+            if (connection is System.Data.Common.DbConnection dbConn) { await dbConn.OpenAsync(); } else { connection.Open(); }
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             
             try
@@ -131,9 +133,9 @@ public class DatabaseService
         // Benchmark optimized if provided
         if (!string.IsNullOrEmpty(optimizedProcedure))
         {
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = _connectionFactory.CreateConnection(connectionString))
             {
-                await connection.OpenAsync();
+                if (connection is System.Data.Common.DbConnection dbConn) { await dbConn.OpenAsync(); } else { connection.Open(); }
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 
                 try
@@ -161,7 +163,7 @@ public class DatabaseService
     public async Task<List<string>> GetTableColumnsAsync(string schemaName, string tableName)
     {
         var connectionString = GetConnectionString();
-        using var connection = new SqlConnection(connectionString);
+        using var connection = _connectionFactory.CreateConnection(connectionString);
         
         var query = @"
             SELECT COLUMN_NAME
