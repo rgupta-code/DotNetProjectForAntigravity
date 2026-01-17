@@ -1,0 +1,226 @@
+@page "/sp-optimizer"
+@inject DatabaseService DatabaseService
+@inject AIService AIService
+@inject IJSRuntime JSRuntime
+@inject ThemeService ThemeService
+
+<div class="space-y-6">
+    <h2 class="text-2xl font-semibold dark:text-white text-light-text">Stored Procedure Optimizer</h2>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="bg-red-900/20 border border-red-500 rounded-lg p-4">
+            <p class="text-red-400">@errorMessage</p>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Side: Original Stored Procedure -->
+        <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium dark:text-white text-light-text">Original Stored Procedure</h3>
+                <select @bind="selectedProcedure" @bind:after="LoadProcedure" 
+                        class="px-3 py-2 dark:bg-dev-dark dark:border-dev-border dark:text-white bg-white border-light-border text-light-text border rounded text-sm">
+                    <option value="">Select a stored procedure...</option>
+                    @foreach (var proc in storedProcedures)
+                    {
+                        <option value="@proc">@proc</option>
+                    }
+                </select>
+            </div>
+            <textarea @bind="originalProcedure" 
+                      class="w-full h-96 p-3 dark:bg-dev-dark dark:border-dev-border dark:text-dev-text bg-white border-light-border text-light-text border rounded text-sm font-mono resize-none"
+                      placeholder="Select a stored procedure from the dropdown above..."></textarea>
+        </div>
+
+        <!-- Right Side: Optimized Version -->
+        <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium dark:text-white text-light-text">AI Optimized Version</h3>
+                <button @onclick="GenerateAIFix" 
+                        disabled="@(string.IsNullOrEmpty(originalProcedure))"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm">
+                    Generate AI Fix
+                </button>
+            </div>
+            <textarea @bind="optimizedProcedure" 
+                      class="w-full h-96 p-3 dark:bg-dev-dark dark:border-dev-border dark:text-dev-text bg-white border-light-border text-light-text border rounded text-sm font-mono resize-none"
+                      placeholder="Click 'Generate AI Fix' to see the optimized version..."></textarea>
+        </div>
+    </div>
+
+    <!-- Benchmark Section -->
+    <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium dark:text-white text-light-text">Performance Benchmark</h3>
+            <button @onclick="RunBenchmark" 
+                    disabled="@(string.IsNullOrEmpty(selectedProcedure) || string.IsNullOrEmpty(optimizedProcedure))"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+                Benchmark
+            </button>
+        </div>
+
+        @if (benchmarkResult != null)
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="dark:bg-dev-dark dark:border-dev-border dark:text-dev-text-muted bg-blue-50 border-light-border text-light-text-muted border rounded p-4">
+                    <h4 class="text-sm font-medium mb-2">Original Procedure</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-sm">Execution Time:</span>
+                            <span class="text-sm font-medium dark:text-white text-light-text">@benchmarkResult.OriginalExecutionTime ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm">Status:</span>
+                            <span class="text-sm font-medium @(benchmarkResult.OriginalSuccess ? "text-green-400" : "text-red-400")">
+                                @(benchmarkResult.OriginalSuccess ? "Success" : "Failed")
+                            </span>
+                        </div>
+                        @if (!benchmarkResult.OriginalSuccess && !string.IsNullOrEmpty(benchmarkResult.OriginalError))
+                        {
+                            <div class="text-xs text-red-400 mt-2">@benchmarkResult.OriginalError</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="dark:bg-dev-dark dark:border-dev-border dark:text-dev-text-muted bg-blue-50 border-light-border text-light-text-muted border rounded p-4">
+                    <h4 class="text-sm font-medium mb-2">Optimized Procedure</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-sm">Execution Time:</span>
+                            <span class="text-sm font-medium dark:text-white text-light-text">@benchmarkResult.OptimizedExecutionTime ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm">Status:</span>
+                            <span class="text-sm font-medium @(benchmarkResult.OptimizedSuccess ? "text-green-400" : "text-red-400")">
+                                @(benchmarkResult.OptimizedSuccess ? "Success" : "Failed")
+                            </span>
+                        </div>
+                        @if (!benchmarkResult.OptimizedSuccess && !string.IsNullOrEmpty(benchmarkResult.OptimizedError))
+                        {
+                            <div class="text-xs text-red-400 mt-2">@benchmarkResult.OptimizedError</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (benchmarkResult.OptimizedSuccess && benchmarkResult.OriginalSuccess)
+            {
+                <div class="mt-4 p-4 dark:bg-dev-dark dark:border-dev-border bg-blue-50 border-light-border border rounded">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm dark:text-dev-text-muted text-light-text-muted">Performance Improvement:</span>
+                        <span class="text-lg font-bold @(benchmarkResult.ImprovementPercent > 0 ? "text-green-400" : "text-red-400")">
+                            @benchmarkResult.ImprovementPercent.ToString("F2")%
+                        </span>
+                    </div>
+                    @if (benchmarkResult.ImprovementPercent > 0)
+                    {
+                        <div class="mt-2 text-sm text-green-400">
+                            The optimized version is @benchmarkResult.ImprovementPercent.ToString("F2")% faster!
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mt-2 text-sm text-yellow-400">
+                            The optimized version is @Math.Abs(benchmarkResult.ImprovementPercent).ToString("F2")% slower. Consider reviewing the optimization.
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-sm text-dev-text-muted mt-4">Click 'Benchmark' to compare performance between original and optimized procedures.</p>
+        }
+    </div>
+</div>
+
+@code {
+    private List<string> storedProcedures = new();
+    private string selectedProcedure = string.Empty;
+    private string originalProcedure = string.Empty;
+    private string optimizedProcedure = string.Empty;
+    private BenchmarkResult? benchmarkResult = null;
+    private string? errorMessage = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStoredProcedures();
+    }
+
+    private async Task LoadStoredProcedures()
+    {
+        errorMessage = null;
+        try
+        {
+            storedProcedures = await DatabaseService.GetStoredProceduresAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading stored procedures: {ex.Message}";
+        }
+    }
+
+    private async Task LoadProcedure()
+    {
+        if (string.IsNullOrEmpty(selectedProcedure))
+        {
+            originalProcedure = string.Empty;
+            optimizedProcedure = string.Empty;
+            benchmarkResult = null;
+            errorMessage = null;
+            return;
+        }
+
+        errorMessage = null;
+        try
+        {
+            originalProcedure = await DatabaseService.GetStoredProcedureDefinitionAsync(selectedProcedure);
+            optimizedProcedure = string.Empty;
+            benchmarkResult = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading stored procedure: {ex.Message}";
+        }
+    }
+
+    private async Task GenerateAIFix()
+    {
+        if (string.IsNullOrEmpty(originalProcedure))
+        {
+            errorMessage = "Please select and load a stored procedure first.";
+            return;
+        }
+
+        errorMessage = null;
+        try
+        {
+            optimizedProcedure = await AIService.OptimizeStoredProcedureAsync(originalProcedure);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error generating AI fix: {ex.Message}";
+        }
+    }
+
+    private async Task RunBenchmark()
+    {
+        if (string.IsNullOrEmpty(selectedProcedure) || string.IsNullOrEmpty(optimizedProcedure))
+        {
+            errorMessage = "Please load a stored procedure and generate an optimized version first.";
+            return;
+        }
+
+        errorMessage = null;
+        try
+        {
+            benchmarkResult = await DatabaseService.BenchmarkStoredProcedureAsync(selectedProcedure, optimizedProcedure);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error running benchmark: {ex.Message}";
+        }
+    }
+}
+

@@ -1,0 +1,268 @@
+@page "/query-builder"
+@inject DatabaseService DatabaseService
+@inject AIService AIService
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="space-y-6">
+    <h2 class="text-2xl font-semibold dark:text-white text-light-text">Query Builder</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Side: Available Tables -->
+        <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg p-4">
+            <h3 class="text-lg font-medium dark:text-white text-light-text mb-4">Available Tables</h3>
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+                @if (isLoadingTables)
+                {
+                    <div class="text-center py-4">
+                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var table in availableTables)
+                    {
+                        <div draggable="true" 
+                             @ondragstart="@((DragEventArgs e) => OnDragStart(e, table))"
+                             class="p-3 dark:bg-dev-dark dark:border-dev-border dark:hover:bg-gray-800 bg-white border-light-border hover:bg-blue-50 border rounded cursor-move transition-colors">
+                            <div class="text-sm font-medium dark:text-white text-light-text">@table.SchemaName.@table.TableName</div>
+                            <div class="text-xs dark:text-dev-text-muted text-light-text-muted mt-1">@table.RowCount.ToString("N0") rows</div>
+                        </div>
+                    }
+                }
+            </div>
+            <button @onclick="LoadTables" 
+                    class="mt-4 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm">
+                Refresh Tables
+            </button>
+        </div>
+
+        <!-- Middle: Query Building Zone -->
+        <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg p-4">
+            <h3 class="text-lg font-medium dark:text-white text-light-text mb-4">Query Builder</h3>
+            <div @ondrop="@OnDrop" 
+                 @ondrop:preventDefault="true"
+                 @ondragover="@OnDragOver"
+                 @ondragover:preventDefault="true"
+                 @ondragleave="@OnDragLeave"
+                 class="min-h-96 p-4 border-2 border-dashed @(isDragOver ? "border-blue-500 bg-blue-900/20" : "dark:border-dev-border border-light-border") rounded-lg transition-colors">
+                @if (selectedTables.Any())
+                {
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-medium text-white">SELECT</span>
+                            <button @onclick="ClearQuery" class="text-xs text-red-400 hover:text-red-300">Clear</button>
+                        </div>
+                        
+                        @foreach (var table in selectedTables)
+                        {
+                            <div class="flex items-center justify-between p-3 dark:bg-dev-dark dark:border-dev-border dark:text-white bg-blue-50 border-light-border text-light-text border rounded">
+                                <span class="text-sm">@table.SchemaName.@table.TableName</span>
+                                <button @onclick="() => RemoveTable(table)" class="text-red-400 hover:text-red-300 text-xs">Remove</button>
+                            </div>
+                        }
+
+                        <div class="mt-4 pt-4 border-t dark:border-dev-border border-light-border">
+                            <label class="block text-sm font-medium dark:text-white text-light-text mb-2">WHERE Clause (optional)</label>
+                            <textarea @bind="whereClause" 
+                                      class="w-full p-2 dark:bg-dev-dark dark:border-dev-border dark:text-dev-text bg-white border-light-border text-light-text border rounded text-sm font-mono resize-none"
+                                      rows="3"
+                                      placeholder="e.g., ColumnName = 'value'"></textarea>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium dark:text-white text-light-text mb-2">ORDER BY (optional)</label>
+                            <input @bind="orderByClause" 
+                                   class="w-full p-2 dark:bg-dev-dark dark:border-dev-border dark:text-dev-text bg-white border-light-border text-light-text border rounded text-sm font-mono"
+                                   placeholder="e.g., ColumnName ASC"/>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex items-center justify-center h-full text-center">
+                        <div>
+                            <div class="text-4xl mb-4">📋</div>
+                            <p class="text-dev-text-muted">Drag tables here to build your query</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right Side: Generated Query -->
+        <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium dark:text-white text-light-text">Generated SQL</h3>
+                <button @onclick="GenerateQuery" 
+                        disabled="@(!selectedTables.Any())"
+                        class="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm transition-colors">
+                    Generate
+                </button>
+            </div>
+            <textarea @bind="generatedQuery" 
+                      class="w-full h-96 p-3 dark:bg-dev-dark dark:border-dev-border dark:text-dev-text bg-white border-light-border text-light-text border rounded text-sm font-mono resize-none"
+                      placeholder="Click 'Generate' to create the SQL query..."></textarea>
+            <div class="mt-4 flex space-x-2">
+                <button @onclick="CopyQuery" 
+                        disabled="@(string.IsNullOrEmpty(generatedQuery))"
+                        class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm transition-colors">
+                    @(string.IsNullOrEmpty(generatedQuery) ? "Copy SQL" : "Copy SQL")
+                </button>
+                <button @onclick="GenerateWithAI" 
+                        disabled="@(!selectedTables.Any())"
+                        class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm transition-colors">
+                    AI Enhance
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<TableInfo> availableTables = new();
+    private List<TableInfo> selectedTables = new();
+    private string whereClause = string.Empty;
+    private string orderByClause = string.Empty;
+    private string generatedQuery = string.Empty;
+    private bool isLoadingTables = false;
+    private bool isDragOver = false;
+    private string? draggedTable = null;
+    private string? errorMessage = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTables();
+    }
+
+    private async Task LoadTables()
+    {
+        isLoadingTables = true;
+        errorMessage = null;
+        try
+        {
+            availableTables = await DatabaseService.GetTablesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading tables: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingTables = false;
+        }
+    }
+
+    private void OnDragStart(DragEventArgs e, TableInfo table)
+    {
+        draggedTable = $"{table.SchemaName}.{table.TableName}";
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnDragOver(DragEventArgs e)
+    {
+        isDragOver = true;
+    }
+
+    private void OnDragLeave(DragEventArgs e)
+    {
+        isDragOver = false;
+    }
+
+    private void OnDrop(DragEventArgs e)
+    {
+        isDragOver = false;
+
+        if (string.IsNullOrEmpty(draggedTable))
+            return;
+
+        var table = availableTables.FirstOrDefault(t => $"{t.SchemaName}.{t.TableName}" == draggedTable);
+        if (table != null && !selectedTables.Any(t => $"{t.SchemaName}.{t.TableName}" == draggedTable))
+        {
+            selectedTables.Add(table);
+            StateHasChanged();
+        }
+
+        draggedTable = null;
+    }
+
+    private void RemoveTable(TableInfo table)
+    {
+        selectedTables.Remove(table);
+        StateHasChanged();
+    }
+
+    private void ClearQuery()
+    {
+        selectedTables.Clear();
+        whereClause = string.Empty;
+        orderByClause = string.Empty;
+        generatedQuery = string.Empty;
+    }
+
+    private void GenerateQuery()
+    {
+        if (!selectedTables.Any())
+            return;
+
+        var tableNames = string.Join(", ", selectedTables.Select(t => $"{t.SchemaName}.{t.TableName}"));
+        var query = $"SELECT *\nFROM {tableNames}";
+
+        if (!string.IsNullOrWhiteSpace(whereClause))
+        {
+            query += $"\nWHERE {whereClause}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(orderByClause))
+        {
+            query += $"\nORDER BY {orderByClause}";
+        }
+
+        generatedQuery = query;
+    }
+
+    private async Task GenerateWithAI()
+    {
+        if (!selectedTables.Any())
+            return;
+
+        var tableNames = string.Join(", ", selectedTables.Select(t => $"{t.SchemaName}.{t.TableName}"));
+        errorMessage = null;
+        try
+        {
+            generatedQuery = await AIService.GenerateQueryAsync(tableNames, $"WHERE: {whereClause}, ORDER BY: {orderByClause}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error generating AI query: {ex.Message}";
+        }
+    }
+
+    private async Task CopyQuery()
+    {
+        if (string.IsNullOrEmpty(generatedQuery))
+            return;
+
+        errorMessage = null;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $"navigator.clipboard.writeText(`{generatedQuery.Replace("`", "\\`").Replace("$", "\\$")}`)");
+            errorMessage = "SQL query copied to clipboard!";
+            StateHasChanged();
+            await Task.Delay(2000);
+            errorMessage = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error copying to clipboard: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cleanup if needed
+        await Task.CompletedTask;
+    }
+}
+

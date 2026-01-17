@@ -1,0 +1,118 @@
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.JSInterop
+@using DotNetProjectForAntigravity.Services
+@inject ThemeService ThemeService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="min-h-screen bg-light-bg dark:bg-dev-dark">
+    <div class="border-b border-light-border bg-light-surface dark:border-dev-border dark:bg-dev-darker">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-light-text dark:text-white">AI SQL Profiler</h1>
+                <p class="text-sm text-light-text-muted dark:text-dev-text-muted mt-1">Professional SQL Server Analysis & Optimization</p>
+            </div>
+            <button type="button" @onclick="ToggleTheme" 
+                    class="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-light-accent dark:bg-dev-dark dark:hover:bg-gray-800 dark:text-white border border-light-border dark:border-dev-border transition-colors">
+                @if (ThemeService.CurrentTheme == "dark")
+                {
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                }
+                else
+                {
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                }
+            </button>
+        </div>
+    </div>
+
+    <div class="border-b border-light-border bg-light-surface dark:border-dev-border dark:bg-dev-darker">
+        <div class="container mx-auto px-4">
+            <nav class="flex space-x-1">
+                <NavLink href="/profiler" class="@GetNavLinkClasses()">
+                    Profiler
+                </NavLink>
+                <NavLink href="/sp-optimizer" class="@GetNavLinkClasses()">
+                    SP Optimizer
+                </NavLink>
+                <NavLink href="/query-builder" class="@GetNavLinkClasses()">
+                    Query Builder
+                </NavLink>
+            </nav>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-6">
+        @Body
+    </main>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += OnThemeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UpdateBodyTheme();
+        }
+    }
+
+    private async void OnThemeChanged()
+    {
+        await UpdateBodyTheme();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+        await UpdateBodyTheme();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateBodyTheme()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("updateTheme", ThemeService.CurrentTheme);
+        }
+        catch (Exception ex)
+        {
+            // Log error for debugging
+            Console.WriteLine($"Error updating theme: {ex.Message}");
+        }
+    }
+
+    private string GetThemeClasses(string darkClasses, string lightClasses)
+    {
+        return ThemeService.CurrentTheme == "dark" ? darkClasses : lightClasses;
+    }
+
+    private string GetNavLinkClasses()
+    {
+        var baseClasses = "nav-link px-4 py-3 text-sm font-medium transition-colors";
+        if (ThemeService.CurrentTheme == "dark")
+        {
+            return $"{baseClasses} hover:bg-dev-dark border-b-2 border-transparent hover:border-blue-500 text-dev-text";
+        }
+        else
+        {
+            return $"{baseClasses} hover:bg-blue-50 border-b-2 border-transparent hover:border-light-accent text-light-text";
+        }
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= OnThemeChanged;
+    }
+}
+

@@ -1,0 +1,84 @@
+html, body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Theme CSS Variables */
+:root {
+    --bg-primary: #f0f4f8;
+    --bg-surface: #ffffff;
+    --bg-secondary: #e2e8f0;
+    --border-color: #cbd5e1;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #3b82f6;
+}
+
+.dark {
+    --bg-primary: #0d1117;
+    --bg-surface: #010409;
+    --bg-secondary: #161b22;
+    --border-color: #30363d;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --accent: #58a6ff;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHZpZXdCb3g9IjAgMCA1NiA0OSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEzLjA5MzggMTMuMDkzOEg0Mi45MDYyVjM1LjkwNjJIMTMuMDkzOFYxMy4wOTM4WiIgZmlsbD0iI0Y1RjVGNSIvPgo8cGF0aCBkPSJNMTguMTg3NSAxOC4xODc1SDM3LjgxMjVWMzAuODEyNUgxOC4xODc1VjE4LjE4NzVaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0yMC4yMTg4IDIwLjIxODhIMjMuNzgxMlYyMy43ODEySDIwLjIxODhWMjAuMjE4OFoiIGZpbGw9IiMxQzFDMUMiLz4KPHBhdGggZD0iTTI2LjIxODggMjAuMjE4OEgyOS43ODEyVjIzLjc4MTJIMjYuMjE4OFYyMC4yMTg4WiIgZmlsbD0iIzFDMUMxQyIvPgo8cGF0aCBkPSJNMzIuMjE4OCAyMC4yMTg4SDM1Ljc4MTJWMjMuNzgxMkgzMi4yMTg4VjIwLjIxODhaIiBmaWxsPSIjMUMxQzFDIi8+CjxwYXRoIGQ9Ik0yMC4yMTg4IDI2LjIxODhIMjMuNzgxMlYyOS43ODEySDIwLjIxODhWMjYuMjE4OFoiIGZpbGw9IiMxQzFDMUMiLz4KPHBhdGggZD0iTTI2LjIxODggMjYuMjE4OEgyOS43ODEyVjI5Ljc4MTJIMjYuMjE4OFYyNi4yMTg4WiIgZmlsbD0iIzFDMUMxQyIvPgo8cGF0aCBkPSJNMzIuMjE4OCAyNi4yMTg4SDM1Ljc4MTJWMjkuNzgxMkgzMi4yMTg4VjI2LjIxODhaIiBmaWxsPSIjMUMxQzFDIi8+CjxwYXRoIGQ9Ik0yMC4yMTg4IDMyLjIxODhIMjMuNzgxMlYzNS43ODEySDIwLjIxODhWMzIuMjE4OFoiIGZpbGw9IiMxQzFDMUMiLz4KPHBhdGggZD0iTTI2LjIxODggMzIuMjE4OEgyOS43ODEyVjM1Ljc4MTJIMjYuMjE4OFYzMi4yMTg4WiIgZmlsbD0iIzFDMUMxQyIvPgo8cGF0aCBkPSJNMzIuMjE4OCAzMi4yMTg4SDM1Ljc4MTJWMzUuNzgxMkgzMi4yMTg4VjMyLjIxODhaIiBmaWxsPSIjMUMxQzFDIi8+Cjwvc3ZnPg==) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+a.nav-link {
+    color: #c9d1d9;
+    text-decoration: none;
+}
+
+a.nav-link:hover {
+    color: #58a6ff;
+}
+
+a.nav-link.active {
+    border-bottom-color: #58a6ff !important;
+    color: #58a6ff !important;
+    background-color: rgba(88, 166, 255, 0.1);
+}
+
+/* Light theme overrides */
+body:not(.dark) a.nav-link {
+    color: #1e293b;
+}
+
+body:not(.dark) a.nav-link:hover {
+    color: #3b82f6;
+}
+
+body:not(.dark) a.nav-link.active {
+    border-bottom-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+

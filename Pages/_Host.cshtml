@@ -1,0 +1,98 @@
+@page "/"
+@namespace DotNetProjectForAntigravity.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI SQL Profiler</title>
+    <base href="~/" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Dark theme colors
+                        'dev-dark': '#0d1117',
+                        'dev-darker': '#010409',
+                        'dev-border': '#30363d',
+                        'dev-text': '#c9d1d9',
+                        'dev-text-muted': '#8b949e',
+                        // Light theme colors (bluish)
+                        'light-bg': '#f0f4f8',
+                        'light-surface': '#ffffff',
+                        'light-border': '#cbd5e1',
+                        'light-text': '#1e293b',
+                        'light-text-muted': '#64748b',
+                        'light-accent': '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="css/site.css" rel="stylesheet" />
+</head>
+<body id="theme-body" class="bg-light-bg text-light-text">
+    <script>
+        // Initialize light mode on load
+        document.documentElement.classList.remove('dark');
+    </script>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+    <script>
+        window.updateTheme = function(theme) {
+            try {
+                const html = document.documentElement;
+                const body = document.getElementById('theme-body');
+                
+                console.log('Updating theme to:', theme);
+                
+                if (theme === 'dark') {
+                    html.classList.add('dark');
+                    if (body) {
+                        body.className = 'dark bg-dev-dark text-dev-text';
+                    }
+                } else {
+                    html.classList.remove('dark');
+                    if (body) {
+                        body.className = 'bg-light-bg text-light-text';
+                    }
+                }
+                
+                console.log('Theme updated successfully');
+            } catch (error) {
+                console.error('Error in updateTheme:', error);
+            }
+        };
+        
+        // Initialize light mode on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                document.documentElement.classList.remove('dark');
+            });
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</body>
+</html>
+

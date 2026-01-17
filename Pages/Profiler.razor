@@ -1,0 +1,151 @@
+@page "/"
+@page "/profiler"
+@inject DatabaseService DatabaseService
+@inject IJSRuntime JSRuntime
+@inject ThemeService ThemeService
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-semibold dark:text-white text-light-text">Database Profiler</h2>
+        <button @onclick="LoadTables" 
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+            Refresh
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-4">
+            <p class="text-red-400">@errorMessage</p>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <p class="mt-4 dark:text-dev-text-muted text-light-text-muted">Loading tables...</p>
+        </div>
+    }
+    else if (tables.Any())
+    {
+        <div class="dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg overflow-hidden">
+            <table class="w-full">
+                <thead class="dark:bg-dev-dark dark:border-dev-border bg-blue-50 border-b border-light-border">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium dark:text-dev-text-muted text-light-text-muted uppercase tracking-wider">Schema</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium dark:text-dev-text-muted text-light-text-muted uppercase tracking-wider">Table</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium dark:text-dev-text-muted text-light-text-muted uppercase tracking-wider">Row Count</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium dark:text-dev-text-muted text-light-text-muted uppercase tracking-wider">Index Health</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium dark:text-dev-text-muted text-light-text-muted uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-dev-border">
+                    @foreach (var table in tables)
+                    {
+                        <tr class="dark:hover:bg-dev-dark hover:bg-blue-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm dark:text-dev-text text-light-text">@table.SchemaName</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium dark:text-white text-light-text">@table.TableName</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">@table.RowCount.ToString("N0")</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if (expandedTables.Contains($"{table.SchemaName}.{table.TableName}"))
+                                {
+                                    <div class="space-y-2">
+                                        @foreach (var index in table.Indexes)
+                                        {
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs">@index.IndexName</span>
+                                                <span class="@GetHealthBadgeClass(index.HealthStatus)">@index.HealthStatus</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="dark:text-dev-text-muted text-light-text-muted">Click to view</span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <button @onclick="() => ToggleTableDetails(table)" 
+                                        class="text-blue-400 hover:text-blue-300">
+                                    @(expandedTables.Contains($"{table.SchemaName}.{table.TableName}") ? "Hide" : "Show") Details
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-12 dark:bg-dev-darker dark:border-dev-border bg-light-surface border-light-border border rounded-lg">
+            <p class="dark:text-dev-text-muted text-light-text-muted">No tables found. Click Refresh to load tables.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<TableInfo> tables = new();
+    private bool isLoading = false;
+    private HashSet<string> expandedTables = new();
+    private string? errorMessage = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTables();
+    }
+
+    private async Task LoadTables()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            tables = await DatabaseService.GetTablesAsync();
+            foreach (var table in tables)
+            {
+                table.Indexes = await DatabaseService.GetIndexHealthAsync(table.SchemaName, table.TableName);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading tables: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleTableDetails(TableInfo table)
+    {
+        var key = $"{table.SchemaName}.{table.TableName}";
+        if (expandedTables.Contains(key))
+        {
+            expandedTables.Remove(key);
+        }
+        else
+        {
+            expandedTables.Add(key);
+            if (!table.Indexes.Any())
+            {
+                table.Indexes = await DatabaseService.GetIndexHealthAsync(table.SchemaName, table.TableName);
+            }
+        }
+        StateHasChanged();
+    }
+
+    private string GetHealthBadgeClass(string healthStatus)
+    {
+        return healthStatus switch
+        {
+            "Good" => "px-2 py-1 text-xs rounded bg-green-900 text-green-300",
+            "Fair" => "px-2 py-1 text-xs rounded bg-yellow-900 text-yellow-300",
+            "Poor" => "px-2 py-1 text-xs rounded bg-red-900 text-red-300",
+            _ => "px-2 py-1 text-xs rounded bg-gray-900 text-gray-300"
+        };
+    }
+}
+
