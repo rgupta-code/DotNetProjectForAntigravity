@@ -1,0 +1,525 @@
+@page "/guardian"
+@using DotNetProjectForAntigravity.Data
+@using DotNetProjectForAntigravity.Services
+@inject SummaryService SummaryService
+
+<PageTitle>Code Guardian - Daily Reports</PageTitle>
+
+<div class="guardian-container">
+    <div class="header">
+        <h1>🛡️ Code Guardian Daily Reports</h1>
+        <p class="subtitle">Automated Testing & Quality Assurance Dashboard</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading summaries...</p>
+        </div>
+    }
+    else if (statistics != null)
+    {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value">@statistics.GetValueOrDefault("TotalRuns", 0)</div>
+                <div class="stat-label">Total Runs</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">@statistics.GetValueOrDefault("SuccessfulRuns", 0)</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value">@GetPassRateDisplay()</div>
+                <div class="stat-label">Avg Pass Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🧪</div>
+                <div class="stat-value">@GetAvgTestsDisplay()</div>
+                <div class="stat-label">Avg Tests/Run</div>
+            </div>
+        </div>
+
+        @if (summaries?.Any() == true)
+        {
+            <div class="summaries-section">
+                <h2>Recent Runs</h2>
+                
+                @foreach (var summary in summaries)
+                {
+                    <div class="summary-card @(summary.Status.ToLower())">
+                        <div class="summary-header">
+                            <div class="summary-title">
+                                <span class="status-badge @summary.Status.ToLower()">
+                                    @(summary.Status == "Success" ? "✅" : "❌") @summary.Status
+                                </span>
+                                <span class="summary-date">@summary.ExecutionDate.ToString("MMM dd, yyyy HH:mm")</span>
+                            </div>
+                            <button class="expand-btn" @onclick="() => ToggleExpand(summary.Id)">
+                                @(expandedSummaries.Contains(summary.Id) ? "▼" : "▶")
+                            </button>
+                        </div>
+
+                        <div class="summary-stats">
+                            <div class="mini-stat">
+                                <span class="mini-label">Tests:</span>
+                                <span class="mini-value">@summary.TotalTests</span>
+                            </div>
+                            <div class="mini-stat success">
+                                <span class="mini-label">Passed:</span>
+                                <span class="mini-value">@summary.PassedTests</span>
+                            </div>
+                            @if (summary.FailedTests > 0)
+                            {
+                                <div class="mini-stat failed">
+                                    <span class="mini-label">Failed:</span>
+                                    <span class="mini-value">@summary.FailedTests</span>
+                                </div>
+                            }
+                            <div class="mini-stat">
+                                <span class="mini-label">Duration:</span>
+                                <span class="mini-value">@($"{summary.TestDurationSeconds:F1}s")</span>
+                            </div>
+                        </div>
+
+                        @if (expandedSummaries.Contains(summary.Id))
+                        {
+                            <div class="summary-details">
+                                @if (!string.IsNullOrEmpty(summary.CommitHash))
+                                {
+                                    <div class="detail-section">
+                                        <strong>Commit:</strong> <code>@summary.CommitHash</code>
+                                    </div>
+                                }
+
+                                @if (summary.FilesAdded?.Any() == true)
+                                {
+                                    <div class="detail-section">
+                                        <strong>Files Added:</strong>
+                                        <ul>
+                                            @foreach (var file in summary.FilesAdded)
+                                            {
+                                                <li><code>@file</code></li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+
+                                @if (summary.FilesModified?.Any() == true)
+                                {
+                                    <div class="detail-section">
+                                        <strong>Files Modified:</strong>
+                                        <ul>
+                                            @foreach (var file in summary.FilesModified)
+                                            {
+                                                <li><code>@file</code></li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+
+                                @if (summary.CoverageByService?.Any() == true)
+                                {
+                                    <div class="detail-section">
+                                        <strong>Coverage by Service:</strong>
+                                        <div class="coverage-grid">
+                                            @foreach (var kvp in summary.CoverageByService)
+                                            {
+                                                <div class="coverage-item">
+                                                    <span>@kvp.Key:</span>
+                                                    <span class="coverage-value">@kvp.Value tests</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(summary.Notes))
+                                {
+                                    <div class="detail-section">
+                                        <strong>Notes:</strong>
+                                        <p>@summary.Notes</p>
+                                    </div>
+                                }
+
+                                @if (summary.TestResults?.Any() == true)
+                                {
+                                    <div class="detail-section">
+                                        <strong>Test Details:</strong>
+                                        <div class="test-results">
+                                            @foreach (var test in summary.TestResults)
+                                            {
+                                                <div class="test-result @test.Status.ToLower()">
+                                                    <span class="test-icon">@(test.Status == "Passed" ? "✓" : "✗")</span>
+                                                    <span class="test-name">@test.ClassName.@test.TestName</span>
+                                                    <span class="test-duration">@($"{test.DurationSeconds:F2}s")</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>No Summaries Yet</h3>
+                <p>Daily summaries will appear here after the Code Guardian runs.</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private Dictionary<string, object>? statistics;
+    private List<DailySummary>? summaries;
+    private HashSet<string> expandedSummaries = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        try
+        {
+            statistics = await SummaryService.GetStatisticsAsync();
+            summaries = await SummaryService.GetAllSummariesAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ToggleExpand(string summaryId)
+    {
+        if (expandedSummaries.Contains(summaryId))
+        {
+            expandedSummaries.Remove(summaryId);
+        }
+        else
+        {
+            expandedSummaries.Add(summaryId);
+        }
+    }
+
+    private string GetPassRateDisplay()
+    {
+        if (statistics == null) return "0%";
+        var rate = (double)statistics.GetValueOrDefault("AveragePassRate", 0.0);
+        return $"{Math.Round(rate, 1)}%";
+    }
+
+    private string GetAvgTestsDisplay()
+    {
+        if (statistics == null) return "0";
+        var avg = (double)statistics.GetValueOrDefault("AverageTestsPerRun", 0.0);
+        return $"{Math.Round(avg, 0)}";
+    }
+}
+
+<style>
+    .guardian-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+
+    .subtitle {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 3rem;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .stat-card.success {
+        border-left: 4px solid #27ae60;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .summaries-section h2 {
+        margin-bottom: 1rem;
+        color: #2c3e50;
+    }
+
+    .summary-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-left: 4px solid #95a5a6;
+    }
+
+    .summary-card.success {
+        border-left-color: #27ae60;
+    }
+
+    .summary-card.failed {
+        border-left-color: #e74c3c;
+    }
+
+    .summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .summary-title {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .status-badge.success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .summary-date {
+        color: #7f8c8d;
+        font-size: 0.95rem;
+    }
+
+    .expand-btn {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #3498db;
+        padding: 0.5rem;
+    }
+
+    .summary-stats {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .mini-stat {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .mini-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .mini-value {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .mini-stat.success .mini-value {
+        color: #27ae60;
+    }
+
+    .mini-stat.failed .mini-value {
+        color: #e74c3c;
+    }
+
+    .summary-details {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ecf0f1;
+    }
+
+    .detail-section {
+        margin-bottom: 1rem;
+    }
+
+    .detail-section strong {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+
+    .detail-section ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .detail-section li {
+        padding: 0.25rem 0;
+    }
+
+    .detail-section code {
+        background: #ecf0f1;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .coverage-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .coverage-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .coverage-value {
+        font-weight: 600;
+        color: #3498db;
+    }
+
+    .test-results {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .test-result {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.25rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .test-result.passed {
+        border-left: 3px solid #27ae60;
+    }
+
+    .test-result.failed {
+        border-left: 3px solid #e74c3c;
+    }
+
+    .test-icon {
+        font-weight: bold;
+    }
+
+    .test-result.passed .test-icon {
+        color: #27ae60;
+    }
+
+    .test-result.failed .test-icon {
+        color: #e74c3c;
+    }
+
+    .test-name {
+        flex: 1;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+
+    .test-duration {
+        color: #7f8c8d;
+        font-size: 0.85rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #7f8c8d;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+</style>

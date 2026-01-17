@@ -10,6 +10,7 @@ builder.Services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddSingleton<DatabaseService>();
 builder.Services.AddSingleton<AIService>();
 builder.Services.AddSingleton<ThemeService>();
+builder.Services.AddSingleton<SummaryService>();
 
 var app = builder.Build();
 
