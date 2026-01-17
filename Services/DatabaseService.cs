@@ -35,7 +35,7 @@ public class DatabaseService
                  FROM sys.partitions p 
                  INNER JOIN sys.indexes i ON p.object_id = i.object_id AND p.index_id = i.index_id
                  WHERE i.object_id = OBJECT_ID(QUOTENAME(t.TABLE_SCHEMA) + '.' + QUOTENAME(t.TABLE_NAME))
-                 AND i.index_id IN (0,1)) as RowCount
+                 AND i.index_id IN (0,1)) as [RowCount]
             FROM INFORMATION_SCHEMA.TABLES t
             WHERE t.TABLE_TYPE = 'BASE TABLE'
             ORDER BY t.TABLE_SCHEMA, t.TABLE_NAME";
