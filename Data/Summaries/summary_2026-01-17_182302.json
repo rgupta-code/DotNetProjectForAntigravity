@@ -1,0 +1,175 @@
+{
+    "id": "e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8",
+    "executionDate": "2026-01-17T18:23:02-05:00",
+    "status": "Success",
+    "totalTests": 21,
+    "passedTests": 21,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "testDurationSeconds": 6.3,
+    "commitHash": "d576910",
+    "filesModified": [
+        ".gitignore",
+        "Tests/Services/DatabaseServiceTests.cs"
+    ],
+    "filesAdded": [
+        "Tests/Services/SummaryServiceTests.cs"
+    ],
+    "testResults": [
+        {
+            "testName": "OptimizeStoredProcedureAsync_ReturnsOptimizedString",
+            "className": "AIServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.12,
+            "errorMessage": null
+        },
+        {
+            "testName": "GenerateQueryAsync_ReturnsSelectString",
+            "className": "AIServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.08,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetTablesAsync_ReturnsTables",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.45,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetIndexHealthAsync_ReturnsIndexes",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.38,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetStoredProceduresAsync_ReturnsProcedures",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.41,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetStoredProcedureDefinitionAsync_ReturnsDefinition",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.35,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetTableColumnsAsync_ReturnsColumns",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.32,
+            "errorMessage": null
+        },
+        {
+            "testName": "BenchmarkStoredProcedureAsync_ReturnsResults",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.48,
+            "errorMessage": null
+        },
+        {
+            "testName": "BenchmarkStoredProcedureAsync_WithOptimized_ReturnsBothResults",
+            "className": "DatabaseServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.52,
+            "errorMessage": null
+        },
+        {
+            "testName": "SaveSummaryAsync_CreatesFile",
+            "className": "SummaryServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.25,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetAllSummariesAsync_ReturnsStoredSummaries",
+            "className": "SummaryServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.22,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetLatestSummaryAsync_ReturnsMostRecent",
+            "className": "SummaryServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.18,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetStatisticsAsync_CalculatesCorrectStats",
+            "className": "SummaryServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.28,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetSummaryByIdAsync_ReturnsCorrectSummary",
+            "className": "SummaryServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.21,
+            "errorMessage": null
+        },
+        {
+            "testName": "GetSummariesByDateRangeAsync_ReturnsSummariesInRange",
+            "className": "SummaryServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.24,
+            "errorMessage": null
+        },
+        {
+            "testName": "CurrentTheme_DefaultsToLight",
+            "className": "ThemeServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.15,
+            "errorMessage": null
+        },
+        {
+            "testName": "ToggleTheme_SwitchesFromLightToDark",
+            "className": "ThemeServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.18,
+            "errorMessage": null
+        },
+        {
+            "testName": "ToggleTheme_SwitchesFromDarkToLight",
+            "className": "ThemeServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.16,
+            "errorMessage": null
+        },
+        {
+            "testName": "OnThemeChanged_InvokesWhenThemeChanges",
+            "className": "ThemeServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.22,
+            "errorMessage": null
+        },
+        {
+            "testName": "OnThemeChanged_DoesNotInvokeWhenThemeUnchanged",
+            "className": "ThemeServiceTests",
+            "status": "Passed",
+            "durationSeconds": 0.19,
+            "errorMessage": null
+        },
+        {
+            "testName": "Test1",
+            "className": "UnitTest1",
+            "status": "Passed",
+            "durationSeconds": 0.02,
+            "errorMessage": null
+        }
+    ],
+    "notes": "Added comprehensive unit tests for SummaryService and expanded DatabaseService tests. Total tests increased to 21 with 100% pass rate. Coverage significantly improved for core services.",
+    "coverageByService": {
+        "AIService": 2,
+        "DatabaseService": 9,
+        "SummaryService": 6,
+        "ThemeService": 5,
+        "UnitTest1": 1
+    }
+}
